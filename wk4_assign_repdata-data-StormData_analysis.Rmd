@@ -1,0 +1,329 @@
+---
+title: "NOAA Storm Database and severe weather events."
+author: "Jun Li <jun.li3@bms.com>"
+fontsize: 10pt
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    fig_height: 5
+    fig_width: 7
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{graphicx}
+- \pagestyle{fancy}
+- \fancyhead[LE,RO]{}
+- \fancyhead[CO,CE]{\textit{BMS Highly Confidential - For internal purposes only}}
+- \fancyfoot[CO,CE]{\textit{BMS Highly Confidential - For internal purposes only}}
+- \fancyfoot[LE,RO]{\thepage}
+Date: Feb 16, 2016
+---
+ 
+
+
+```{r global_options, include=FALSE}
+# use include=FALSE to have the chunk evaluated, but neither the code nor
+# its output displayed.
+knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE,
+                      fig.align="center", fig.width=12,fig.height=8,
+                      fig.path='Figs/')
+```
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+# Clear the current session, to avoid errors from persisting data structures
+rm(list= ls()[!(ls() %in% c('storm'))])
+#rm(list=ls())
+setwd("C:/Users/lij121/Documents/R_projects/Coursera_lectures/05ReproducibilityResearch/wk4_assignment")
+# Free up memory by forcing garbage collection
+invisible(gc())
+set.seed(1234)
+startTime <- Sys.time()
+
+company <- "Bristol-Myers Squibb Co."
+```
+
+\newpage
+
+# Introduction
+
+Introduction
+Storms and other severe weather events can cause both public health and economic problems for communities and municipalities. Many severe events can result in fatalities, injuries, and property damage, and preventing such outcomes to the extent possible is a key concern.
+This project involves exploring the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database. This database tracks characteristics of major storms and weather events in the United States, including when and where they occur, as well as estimates of any fatalities, injuries, and property damage.
+
+# Data
+
+The data for this assignment come in the form of a comma-separated-value file compressed via the bzip2 algorithm to reduce its size. It is downloaded from the course web site:
+
+# Assignment
+
+The basic goal of this assignment is to explore the NOAA Storm Database and answer some basic questions about severe weather events. 
+You must use the database to answer the questions below and show the code for your entire analysis. 
+Your analysis can consist of tables, figures, or other summaries. 
+You may use any R package you want to support your analysis.
+
+Two Questions to address
+
+1) Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+2) Across the United States, which types of events have the greatest economic consequences?
+
+
+# Data Processing
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(printr) # Pretty printing in knitr
+library(gplots) 
+library(plyr)
+library(gridExtra)
+
+```
+
+
+# Read Data
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+storm = read.csv("repdata-data-StormData.csv", header = TRUE, sep = ",")
+storm <- mutate_each(storm, funs(toupper))
+
+```
+
+
+# Events most harmful to population health: fatalities and Injuries
+
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+
+event = as.data.frame(storm[, c("EVTYPE" , "FATALITIES", "INJURIES")])
+event[,2]<- as.numeric(event[,2])
+event[,3]<- as.numeric(event[,3])
+colclass <- lapply(event, class)
+colclass
+head(event)
+dim(event)
+
+```
+
+
+## Events Causing Fatalities 
+
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+
+event_agg <- aggregate(x=event[,2], by=list(event[,1]), FUN=sum, na.rm=TRUE)
+names(event_agg)[1] <- colnames(event[1])
+names(event_agg)[2] <- colnames(event[2])  
+
+event_order<- event_agg[order(event_agg[,2], decreasing = TRUE),]
+Top30 <- event_order[1:30,]
+rownames(Top30) <- NULL
+eve_counts <- Top30[,2]
+eve_list <- c(Top30[,1])
+eve_name <- Top30[,1]
+    
+g <- ggplot(Top30, aes(x = reorder(eve_list, -eve_counts), y = eve_counts)) +
+        geom_bar(stat = "identity") + 
+        ggtitle("Top30_Events_Causing_Fatalities") +
+        labs(x="Event",y="Frequncy") +      
+        theme(axis.text.x = element_text(angle = 90, hjust = 1))
+print(g)
+png(file = "Top_30_Events_Causing_Fatalities.png", width=8,height=6, units = 'in', res = 300)
+
+tb <- knitr::kable(Top30, digits = 5, caption = "Top_30_Events_Causing_Fatalities", col.names = c("Events" , "Fatalities"))
+print(tb)
+
+```
+
+
+## Events Causing Injuries 
+
+```{r}
+
+event_agg2 <- aggregate(x=event[,3], by=list(event[,1]), FUN=sum, na.rm=TRUE)
+names(event_agg2)[1] <- colnames(event[1])
+names(event_agg2)[2] <- colnames(event[3])  
+
+event_order2<- event_agg2[order(event_agg2[,2], decreasing = TRUE),]
+Top30_2 <- event_order2[1:30,]
+rownames(Top30_2) <- NULL
+eve_counts2 <- Top30_2[,2]
+eve_list2 <- c(Top30_2[,1])
+eve_name2 <- Top30_2[,1]
+    
+g2 <- ggplot(Top30_2, aes(x = reorder(eve_list2, -eve_counts2), y = eve_counts2)) +
+        geom_bar(stat = "identity") + 
+        ggtitle("Top_30_Events_Causing_Injuries") +
+        labs(x="Event",y="Frequncy") +      
+        theme(axis.text.x = element_text(angle = 90, hjust = 1))
+print(g2)
+png(file = "Top_30_Events_Causing_Injuries.png", width=8,height=6, units = 'in', res = 300)
+
+tb2 <- knitr::kable(Top30_2, digits = 5, caption = "Top_30_Events_Causing_Injuries", col.names = c("Events" , "Injuries"))
+print(tb2)
+
+```
+
+
+# Events have the greatest economic consequences
+
+```{r}
+
+prop = storm[,c(8,25:26)]
+list1 = sort(unique(prop$PROPDMGEXP))
+list1
+prop[,2]<- as.numeric(prop[,2])
+colclass <- lapply(prop, class)
+colclass
+
+```
+
+
+## Events causing Property Damage
+
+```{r}
+# check no missing value in PROPDMG column
+
+a = sum(is.na(prop$PROPDMG))
+# prop<-subset(prop,!is.na(prop$PROPDMG))
+
+prop0 <- subset(prop, prop$PROPDMGEXP=="0")
+prop0$PROPDMG <- prop0$PROPDMG*1e+0
+prop1 <- subset(prop, prop$PROPDMGEXP=="1")
+prop1$PROPDMG <- prop1$PROPDMG*1e+1
+prop2 <- subset(prop, prop$PROPDMGEXP=="2")
+prop2$PROPDMG <- prop2$PROPDMG*1e+2
+prop3 <- subset(prop, prop$PROPDMGEXP=="3")
+prop3$PROPDMG <- prop3$PROPDMG*1e+3
+prop4 <- subset(prop, prop$PROPDMGEXP=="4")
+prop4$PROPDMG <- prop4$PROPDMG*1e+4
+prop5 <- subset(prop, prop$PROPDMGEXP=="5")
+prop5$PROPDMG <- prop5$PROPDMG*1e+5
+prop6 <- subset(prop, prop$PROPDMGEXP=="6")
+prop6$PROPDMG <- prop6$PROPDMG*1e+6
+prop7 <- subset(prop, prop$PROPDMGEXP=="7")
+prop7$PROPDMG <- prop7$PROPDMG*1e+7
+prop8 <- subset(prop, prop$PROPDMGEXP=="8")
+prop8$PROPDMG <- prop8$PROPDMG*1e+8
+propH <- subset(prop, prop$PROPDMGEXP=="H")
+propH$PROPDMG <- propH$PROPDMG*1e+02
+propK <- subset(prop, prop$PROPDMGEXP=="K")
+propK$PROPDMG <- propK$PROPDMG*1e+03
+propM <- subset(prop, prop$PROPDMGEXP=="M")
+propM$PROPDMG <- propM$PROPDMG*1e+06
+propB <- subset(prop, prop$PROPDMGEXP=="B")
+propB$PROPDMG <- propB$PROPDMG*1e+09
+propNA <- subset(prop, prop$PROPDMGEXP=="")
+propNA$PROPDMG <- propNA$PROPDMG
+propplus <- subset(prop, prop$PROPDMGEXP=="+")
+propplus$PROPDMG <- propplus$PROPDMG
+propQA <- subset(prop, prop$PROPDMGEXP=="?")
+propQA$PROPDMG <- propQA$PROPDMG
+propDash <- subset(prop, prop$PROPDMGEXP=="-")
+propDash$PROPDMG <- propDash$PROPDMG
+
+propnew = rbind(prop0, prop1, prop2, prop3, prop4, prop5, prop6, prop7, prop8, propH, propK, propM, propB, propNA, propplus, propQA, propDash)
+
+# colclass <- lapply(event, class)
+prop[,2]<- as.numeric(propnew[,2])
+colclass <- lapply(prop, class)
+colclass
+head(prop)
+dim(prop)
+
+propnew_agg <- aggregate(x=propnew[,2], by=list(propnew[,1]), FUN=sum, na.rm=TRUE)
+names(propnew_agg)[1] <- colnames(propnew[1])
+names(propnew_agg)[2] <- colnames(propnew[2])  
+
+propnew_order<- propnew_agg[order(propnew_agg[,2], decreasing = TRUE),]
+Top30_ProDmg <- propnew_order[1:30,]
+eve_counts <- Top30_ProDmg[,2]
+eve_list <- c(Top30_ProDmg[,1])
+eve_name <- Top30_ProDmg[,1]
+    
+g <- ggplot(Top30_ProDmg, aes(x = reorder(eve_list, -eve_counts), y = eve_counts)) +
+        geom_bar(stat = "identity") + 
+        ggtitle("Top_30_Events_Causing_PropertyDamage") +
+        labs(x="Event",y="Frequncy") +      
+        theme(axis.text.x = element_text(angle = 90, hjust = 1))
+print(g)
+png(file = "Top_30_Events_Causing_PropertyDamage.png", width=8,height=6, units = 'in', res = 300)
+
+tb <- knitr::kable(Top30, digits = 5, caption = "Top_30_Events_Causing_PropertyDamage", col.names = c("Events" , "PropDmg"))
+print(tb)
+
+```
+
+
+## Events Causing CROP DAMAGE
+
+```{r}
+
+crop = storm[,c(8,27:28)]
+list2 = sort(unique(crop$CROPDMGEXP))
+list2
+crop[,2]<- as.numeric(crop[,2])
+colclass <- lapply(crop, class)
+colclass
+
+b = sum(is.na(crop$CROPDMG))
+# crop<-subset(crop,!is.na(crop$CROPDMG))
+
+crop0 <- subset(crop, crop$CROPDMGEXP=="0")
+crop0$CROPDMG <- crop0$CROPDMG*1e+0
+crop2 <- subset(crop, crop$CROPDMGEXP=="2")
+crop2$CROPDMG <- crop2$CROPDMG*1e+2
+cropK <- subset(crop, crop$CROPDMGEXP=="K")
+cropK$CROPDMG <- cropK$CROPDMG*1e+03
+cropM <- subset(crop, crop$CROPDMGEXP=="M")
+cropM$CROPDMG <- cropM$CROPDMG*1e+06
+cropB <- subset(crop, crop$CROPDMGEXP=="B")
+cropB$CROPDMG <- cropB$CROPDMG*1e+09
+cropNA <- subset(crop, crop$CROPDMGEXP=="")
+cropNA$CROPDMG <- cropNA$CROPDMG
+cropQA <- subset(crop, crop$CROPDMGEXP=="?")
+cropQA$CROPDMG <- cropQA$CROPDMG
+
+cropnew = rbind(crop0, crop2, cropK, cropM, cropB, cropNA, cropQA)
+
+cropnew_agg <- aggregate(x=cropnew[,2], by=list(cropnew[,1]), FUN=sum, na.rm=TRUE)
+names(cropnew_agg)[1] <- colnames(cropnew[1])
+names(cropnew_agg)[2] <- colnames(cropnew[2])  
+
+cropnew_order<- cropnew_agg[order(cropnew_agg[,2], decreasing = TRUE),]
+Top30_CropDmg <- cropnew_order[1:30,]
+eve_counts <- Top30_CropDmg[,2]
+eve_list <- c(Top30_CropDmg[,1])
+eve_name <- Top30_CropDmg[,1]
+    
+g <- ggplot(Top30_CropDmg, aes(x = reorder(eve_list, -eve_counts), y = eve_counts)) +
+        geom_bar(stat = "identity") + 
+        ggtitle("Top_30_Events_Causing_CropDamage") +
+        labs(x="Event",y="Frequncy") +      
+        theme(axis.text.x = element_text(angle = 90, hjust = 1))
+print(g)
+png(file = "Top_30_Events_Causing_CropDamage.png", width=8,height=6, units = 'in', res = 300)
+
+tb <- knitr::kable(Top30, digits = 5, caption = "Top_30_Events_Causing_CropDamage", col.names = c("Events" , "CropDmg"))
+print(tb)
+
+```
+
+------
+
+\newpage
+
+## System Information
+
+***Time required to process this report:*** *`r format(Sys.time() - startTime)`*
+  
+***R session information:***
+  
+```{r, echo_session_info}
+  sessionInfo()
+```
