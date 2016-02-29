@@ -3,14 +3,14 @@ title: "NOAA Storm Database and severe weather events."
 author: "Jun Li <jun.li3@bms.com>"
 fontsize: 10pt
 output:
-  html_document:
-    toc: yes
   pdf_document:
     fig_height: 5
     fig_width: 7
     number_sections: yes
     toc: yes
     toc_depth: 4
+  html_document:
+    toc: yes
 header-includes:
 - \usepackage{fancyhdr}
 - \usepackage{graphicx}
@@ -72,9 +72,9 @@ Two Questions to address
 2) Across the United States, which types of events have the greatest economic consequences?
 
 
-# Data Processing
+# Load Libraries
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
 
 library(dplyr)
 library(ggplot2)
@@ -89,7 +89,7 @@ library(gridExtra)
 
 # Read Data
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
 
 storm = read.csv("repdata-data-StormData.csv", header = TRUE, sep = ",")
 storm <- mutate_each(storm, funs(toupper))
@@ -106,8 +106,6 @@ event[,2]<- as.numeric(event[,2])
 event[,3]<- as.numeric(event[,3])
 colclass <- lapply(event, class)
 colclass
-head(event)
-dim(event)
 
 ```
 
@@ -143,7 +141,7 @@ print(tb)
 
 ## Events Causing Injuries 
 
-```{r}
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
 
 event_agg2 <- aggregate(x=event[,3], by=list(event[,1]), FUN=sum, na.rm=TRUE)
 names(event_agg2)[1] <- colnames(event[1])
@@ -186,7 +184,7 @@ colclass
 
 ## Events causing Property Damage
 
-```{r}
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
 # check no missing value in PROPDMG column
 
 a = sum(is.na(prop$PROPDMG))
@@ -233,8 +231,10 @@ propnew = rbind(prop0, prop1, prop2, prop3, prop4, prop5, prop6, prop7, prop8, p
 prop[,2]<- as.numeric(propnew[,2])
 colclass <- lapply(prop, class)
 colclass
-head(prop)
-dim(prop)
+
+```
+
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
 
 propnew_agg <- aggregate(x=propnew[,2], by=list(propnew[,1]), FUN=sum, na.rm=TRUE)
 names(propnew_agg)[1] <- colnames(propnew[1])
@@ -249,20 +249,20 @@ eve_name <- Top30_ProDmg[,1]
 g <- ggplot(Top30_ProDmg, aes(x = reorder(eve_list, -eve_counts), y = eve_counts)) +
         geom_bar(stat = "identity") + 
         ggtitle("Top_30_Events_Causing_PropertyDamage") +
-        labs(x="Event",y="Frequncy") +      
+        labs(x="Event",y="Dollar Amount") +      
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
 print(g)
 png(file = "Top_30_Events_Causing_PropertyDamage.png", width=8,height=6, units = 'in', res = 300)
 
-tb <- knitr::kable(Top30, digits = 5, caption = "Top_30_Events_Causing_PropertyDamage", col.names = c("Events" , "PropDmg"))
-print(tb)
+tb3 <- knitr::kable(Top30_ProDmg, digits = 5, caption = "Top_30_Events_Causing_PropertyDamage", col.names = c("Events" , "PropDmg"))
+print(tb3)
 
 ```
 
 
 ## Events Causing CROP DAMAGE
 
-```{r}
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
 
 crop = storm[,c(8,27:28)]
 list2 = sort(unique(crop$CROPDMGEXP))
@@ -295,6 +295,10 @@ cropnew_agg <- aggregate(x=cropnew[,2], by=list(cropnew[,1]), FUN=sum, na.rm=TRU
 names(cropnew_agg)[1] <- colnames(cropnew[1])
 names(cropnew_agg)[2] <- colnames(cropnew[2])  
 
+```
+
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+
 cropnew_order<- cropnew_agg[order(cropnew_agg[,2], decreasing = TRUE),]
 Top30_CropDmg <- cropnew_order[1:30,]
 eve_counts <- Top30_CropDmg[,2]
@@ -304,13 +308,13 @@ eve_name <- Top30_CropDmg[,1]
 g <- ggplot(Top30_CropDmg, aes(x = reorder(eve_list, -eve_counts), y = eve_counts)) +
         geom_bar(stat = "identity") + 
         ggtitle("Top_30_Events_Causing_CropDamage") +
-        labs(x="Event",y="Frequncy") +      
+        labs(x="Event",y="Dollar Amount") +      
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
 print(g)
 png(file = "Top_30_Events_Causing_CropDamage.png", width=8,height=6, units = 'in', res = 300)
 
-tb <- knitr::kable(Top30, digits = 5, caption = "Top_30_Events_Causing_CropDamage", col.names = c("Events" , "CropDmg"))
-print(tb)
+tb4 <- knitr::kable(Top30_CropDmg, digits = 5, caption = "Top_30_Events_Causing_CropDamage", col.names = c("Events" , "CropDmg"))
+print(tb4)
 
 ```
 
